@@ -6,11 +6,11 @@ var path = require('path');
 var child_process = require('child_process');
 var exec = child_process.exec;
 var fs = require('fs-extra');
-var _ = require('lodash');
+var _ = require('@sailshq/lodash');
 var SocketIOClient = require('socket.io-client');
 delete require.cache[require.resolve('socket.io-client')];
 var SailsIOClient = require('sails.io.js');
-var Sails = require('sails');
+var Sails = require('../../../lib/app');
 
 
 
@@ -63,3 +63,198 @@ module.exports = {
     if (!_.isFunction(done)) {
       throw new Error('When using the appHelper\'s `build()` method, a callback argument is required');
     }
+
+
+    var pathToLocalSailsCLI = path.resolve('./bin/sails.js');
+
+
+    // Cleanup old test fixtures
+    if (fs.existsSync(appName)) {
+      fs.removeSync(path.resolve('./', appName));
+    }
+
+    // Create an empty directory for the test app.
+    var appDirPath = path.resolve('./', appName);
+    fs.mkdirSync(appDirPath);
+
+    //
+    process.chdir(appName);
+    child_process.exec('node ' + pathToLocalSailsCLI + ' new --fast --without=lodash,async', function(err) {
+      if (err) {
+        return done(err);
+      }
+      // Symlink dependencies
+      module.exports.linkDeps('.');
+      // Copy test fixtures to the test app.
+      fs.copy('../test/integration/fixtures/sampleapp', './', done);
+    });
+  },
+
+
+
+  /**
+   * Remove a test app (clean up files on disk.)
+   *
+   * @sync (because it sync filesystem methods)
+   */
+  teardown: function(appName) {
+    appName = appName ? appName : 'testApp';
+
+    var dir = path.resolve('./', appName);
+    if (fs.existsSync(dir)) {
+      fs.removeSync(dir);
+    }
+  },
+
+
+
+
+
+  liftQuiet: function(options, callback) {
+
+    if (_.isFunction(options)) {
+      callback = options;
+      options = null;
+    }
+
+    options = options || {};
+    _.defaults(options, {
+      log: {
+        level: 'silent'
+      }
+    });
+
+    return module.exports.lift(options, callback);
+
+  },
+
+
+
+  lift: function(options, callback) {
+
+    // Clear NODE_ENV to avoid unintended consequences.
+    delete process.env.NODE_ENV;
+
+    if (_.isFunction(options)) {
+      callback = options;
+      options = null;
+    }
+
+    options = options || {};
+    _.defaults(options, {
+      port: 1342,
+      environment: process.env.TEST_ENV,
+      globals: false
+    });
+    options.hooks = options.hooks || {};
+    options.hooks.grunt = options.hooks.grunt || false;
+
+    Sails().lift(options, function(err, sails) {
+      if (err) {
+        return callback(err);
+      }
+      return callback(null, sails);
+    });
+
+  },
+
+  load: function(options, callback) {
+
+    // Clear NODE_ENV to avoid unintended consequences.
+    delete process.env.NODE_ENV;
+
+    if (_.isFunction(options)) {
+      callback = options;
+      options = null;
+    }
+
+    options = options || {};
+    _.defaults(options, {
+      port: 1342,
+      environment: process.env.TEST_ENV
+    });
+    options.hooks = options.hooks || {};
+    options.hooks.grunt = options.hooks.grunt || false;
+
+    Sails().load(options, function(err, sails) {
+      if (err) {
+        return callback(err);
+      }
+      return callback(null, sails);
+    });
+
+  },
+
+
+  buildAndLift: function(appName, options, callback) {
+    if (_.isFunction(options)) {
+      callback = options;
+      options = null;
+    }
+    module.exports.build(appName, function(err) {
+      if (err) {
+        return callback(err);
+      }
+      module.exports.lift(options, callback);
+    });
+  },
+
+  liftWithTwoSockets: function(options, callback) {
+    if (_.isFunction(options)) {
+      callback = options;
+      options = null;
+    }
+    module.exports.lift(options, function(err, sails) {
+      if (err) {
+        return callback(err);
+      }
+
+      var socket1 = io.sails.connect('http://localhost:1342', {
+        multiplex: false,
+      });
+      socket1.on('connect', function() {
+        var socket2 = io.sails.connect('http://localhost:1342', {
+          multiplex: false,
+        });
+        socket2.on('connect', function() {
+          return callback(null, sails, socket1, socket2);
+        });
+      });
+    });
+  },
+
+  buildAndLiftWithTwoSockets: function(appName, options, callback) {
+    if (_.isFunction(options)) {
+      callback = options;
+      options = null;
+    }
+    module.exports.build(appName, function(err) {
+      if (err) {
+        return callback(err);
+      }
+      module.exports.liftWithTwoSockets(options, callback);
+    });
+  },
+
+  linkDeps: function(appPath) {
+    var deps = ['sails-hook-orm', 'sails-hook-sockets', 'sails-disk'];
+    _.each(deps, function(dep) {
+      fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', '..', 'node_modules', dep), path.resolve(appPath, 'node_modules', dep));
+    });
+  },
+
+  linkLodash: function(appPath) {
+    fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', '..', 'node_modules', '@sailshq', 'lodash'), path.resolve(appPath, 'node_modules', 'lodash'));
+  },
+
+
+  linkAsync: function(appPath) {
+    fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', '..', 'node_modules', 'async'), path.resolve(appPath, 'node_modules', 'async'));
+  },
+
+
+  linkSails: function(appPath) {
+    fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', '..'), path.resolve(appPath, 'node_modules', 'sails'));
+  },
+
+};
