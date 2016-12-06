@@ -65,7 +65,7 @@ module.exports = {
     }
 
 
-    var pathToLocalSailsCLI = path.resolve('./bin/sails.js');
+    var pathToLocalSailsCLI = path.resolve('./node_modules/sails/bin/sails.js');
 
 
     // Cleanup old test fixtures
@@ -239,22 +239,22 @@ module.exports = {
   linkDeps: function(appPath) {
     var deps = ['sails-hook-orm', 'sails-hook-sockets', 'sails-disk'];
     _.each(deps, function(dep) {
-      fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', '..', 'node_modules', dep), path.resolve(appPath, 'node_modules', dep));
+      fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', 'node_modules', dep), path.resolve(appPath, 'node_modules', dep));
     });
   },
 
   linkLodash: function(appPath) {
-    fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', '..', 'node_modules', '@sailshq', 'lodash'), path.resolve(appPath, 'node_modules', 'lodash'));
+    fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', 'node_modules', 'lodash'), path.resolve(appPath, 'node_modules', 'lodash'));
   },
 
 
   linkAsync: function(appPath) {
-    fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', '..', 'node_modules', 'async'), path.resolve(appPath, 'node_modules', 'async'));
+    fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', 'node_modules', 'async'), path.resolve(appPath, 'node_modules', 'async'));
   },
 
 
   linkSails: function(appPath) {
-    fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', '..'), path.resolve(appPath, 'node_modules', 'sails'));
+    fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..'), path.resolve(appPath, 'node_modules', 'sails'));
   },
 
 };
