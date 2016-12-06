@@ -237,11 +237,12 @@ module.exports = {
   },
 
   linkDeps: function(appPath) {
-    var deps = ['sails-hook-orm-offshore', 'sails-hook-sockets', 'offshore-memory'];
+    var deps = ['sails-hook-orm-offshore', 'sails-hook-sockets', 'offshore-memory', 'sails-hook-blueprints-offshore'];
     _.each(deps, function(dep) {
       console.log('appPath',appPath);
       console.log('a', path.resolve(__dirname, '..', '..', 'node_modules', dep));
       console.log('b', path.resolve(appPath, 'node_modules', dep));
+      console.log('dep', dep, fs.existsSync(path.resolve(__dirname, '..', '..', 'node_modules', dep)));
       fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', 'node_modules', dep), path.resolve(appPath, 'node_modules', dep));
     });
     // add this hook
