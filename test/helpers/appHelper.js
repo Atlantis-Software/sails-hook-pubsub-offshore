@@ -181,7 +181,6 @@ module.exports = {
       }
       return callback(null, sails);
     });
-testApp/node_modules
   },
 
 
