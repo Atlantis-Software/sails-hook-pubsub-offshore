@@ -6,11 +6,11 @@ var path = require('path');
 var child_process = require('child_process');
 var exec = child_process.exec;
 var fs = require('fs-extra');
-var _ = require('@sailshq/lodash');
+var _ = require('lodash');
 var SocketIOClient = require('socket.io-client');
 delete require.cache[require.resolve('socket.io-client')];
 var SailsIOClient = require('sails.io.js');
-var Sails = require('../../../lib/app');
+var Sails = require('sails');
 
 
 
