@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "pubsub for offshore",
   "main": "index.js",
+  "scripts": {
+    "test": "node ./node_modules/mocha/bin/mocha test -t 15000"
+  },
   "sails": {
     "isHook": true
   },
