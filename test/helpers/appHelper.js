@@ -147,6 +147,8 @@ module.exports = {
     });
     options.hooks = options.hooks || {};
     options.hooks.grunt = options.hooks.grunt || false;
+    options.hooks.orm = false;
+    options.hooks.pubsub = false;
 
     Sails().lift(options, function(err, sails) {
       if (err) {
@@ -241,6 +243,8 @@ module.exports = {
     _.each(deps, function(dep) {
       fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', 'node_modules', dep), path.resolve(appPath, 'node_modules', dep));
     });
+    // add this hook
+    fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..'), path.resolve(appPath, 'node_modules', 'sails-hook-pubsub-offshore'));
   },
 
   linkLodash: function(appPath) {
