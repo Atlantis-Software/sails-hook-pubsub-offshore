@@ -10,7 +10,7 @@ var _ = require('lodash');
 var SocketIOClient = require('socket.io-client');
 delete require.cache[require.resolve('socket.io-client')];
 var SailsIOClient = require('sails.io.js');
-var Sails = require('sails');
+var Sails = require('sails').Sails;
 
 
 
@@ -64,8 +64,7 @@ module.exports = {
       throw new Error('When using the appHelper\'s `build()` method, a callback argument is required');
     }
 
-
-    var pathToLocalSailsCLI = path.resolve('./node_modules/sails/bin/sails.js');
+    var pathToLocalSailsCLI = path.resolve(__dirname, '..', '..', 'node_modules', 'sails', 'bin', 'sails.js');
 
 
     // Cleanup old test fixtures
@@ -86,7 +85,7 @@ module.exports = {
       // Symlink dependencies
       module.exports.linkDeps('.');
       // Copy test fixtures to the test app.
-      fs.copy('../test/integration/fixtures/sampleapp', './', done);
+      fs.copy(path.resolve(__dirname, '..', 'fixtures', 'sampleapp'), './', done);
     });
   },
 
@@ -182,7 +181,7 @@ module.exports = {
       }
       return callback(null, sails);
     });
-
+testApp/node_modules
   },
 
 
@@ -239,6 +238,9 @@ module.exports = {
   linkDeps: function(appPath) {
     var deps = ['sails-hook-orm-offshore', 'sails-hook-sockets', 'offshore-memory'];
     _.each(deps, function(dep) {
+      console.log('appPath',appPath);
+      console.log('a',path.resolve(__dirname, '..', '..', 'node_modules', dep));
+      console.log('b',path.resolve(appPath, 'node_modules', dep));
       fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', 'node_modules', dep), path.resolve(appPath, 'node_modules', dep));
     });
   },
