@@ -146,6 +146,7 @@ module.exports = {
     options.hooks.grunt = options.hooks.grunt || false;
     options.hooks.orm = false;
     options.hooks.pubsub = false;
+    options.hooks.blueprints = false;
 
     Sails().lift(options, function(err, sails) {
       if (err) {
@@ -175,6 +176,7 @@ module.exports = {
     options.hooks.grunt = options.hooks.grunt || false;
     options.hooks.orm = false;
     options.hooks.pubsub = false;
+    options.hooks.blueprints = false;
 
     Sails().load(options, function(err, sails) {
       if (err) {
@@ -207,7 +209,6 @@ module.exports = {
       if (err) {
         return callback(err);
       }
-
       var socket1 = io.sails.connect('http://localhost:1342', {
         multiplex: false,
       });
