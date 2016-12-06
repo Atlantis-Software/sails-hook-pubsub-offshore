@@ -174,6 +174,8 @@ module.exports = {
     });
     options.hooks = options.hooks || {};
     options.hooks.grunt = options.hooks.grunt || false;
+    options.hooks.orm = false;
+    options.hooks.pubsub = false;
 
     Sails().load(options, function(err, sails) {
       if (err) {
