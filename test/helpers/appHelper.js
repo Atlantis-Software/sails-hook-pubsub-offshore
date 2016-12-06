@@ -66,26 +66,24 @@ module.exports = {
 
     var pathToLocalSailsCLI = path.resolve(__dirname, '..', '..', 'node_modules', 'sails', 'bin', 'sails.js');
 
+    var appDirPath = path.resolve(__dirname, '..', '..', appName);
 
     // Cleanup old test fixtures
-    if (fs.existsSync(appName)) {
-      fs.removeSync(path.resolve('./', appName));
+    if (fs.existsSync(appDirPath)) {
+      fs.removeSync(appDirPath);
     }
 
     // Create an empty directory for the test app.
-    var appDirPath = path.resolve('./', appName);
     fs.mkdirSync(appDirPath);
-
-    //
     process.chdir(appName);
     child_process.exec('node ' + pathToLocalSailsCLI + ' new --fast --without=lodash,async', function(err) {
       if (err) {
         return done(err);
       }
       // Symlink dependencies
-      module.exports.linkDeps('.');
+      module.exports.linkDeps(appDirPath);
       // Copy test fixtures to the test app.
-      fs.copy(path.resolve(__dirname, '..', 'fixtures', 'sampleapp'), './', done);
+      fs.copy(path.resolve(__dirname, '..', 'fixtures', 'sampleapp'), appDirPath, done);
     });
   },
 
@@ -98,8 +96,7 @@ module.exports = {
    */
   teardown: function(appName) {
     appName = appName ? appName : 'testApp';
-
-    var dir = path.resolve('./', appName);
+    var dir = path.resolve(__dirname, '..', '..', appName);
     if (fs.existsSync(dir)) {
       fs.removeSync(dir);
     }
