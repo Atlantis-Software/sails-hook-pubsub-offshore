@@ -14,6 +14,26 @@ Install this hook with:
 $ npm install sails-hook-pubsub-offshore --save
 ```
 
+#PubS: Following PubSub methods are prefixed with a underscore!
+
+`PubSub Methods`
+````js
+Model._publishCreate();
+Model._publishUpdate();
+Model._publishDestroy();
+
+Model._publishAdd();
+Model._publishRemove();
+
+Model._watch();
+Model._unwatch();
+
+Model._introduce();
+Model._retire();
+
+Model._room();
+````
+
 # Configuration
 
 `.sailsrc`
