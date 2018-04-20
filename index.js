@@ -4,7 +4,6 @@
 
 var util = require('util');
 var _ = require('lodash');
-var STRINGFILE = require('sails-stringfile');
 
 
 
@@ -28,11 +27,11 @@ module.exports = function(sails) {
   // Private function for parsing a potential instance ID.
   var parseId = function (id) {
 
-    if(!_.isObject(this.attributes)) {
+    if (!_.isObject(this.attributes)) {
       return id;
     }
     var pkAttrDef = this.attributes[this.primaryKey];
-    if(_.isPlainObject(pkAttrDef)) {
+    if (_.isPlainObject(pkAttrDef)) {
       if (pkAttrDef.type === 'integer') {
         return parseInt(id);
       } else if (pkAttrDef.type === 'string') {
@@ -250,7 +249,9 @@ module.exports = function(sails) {
 
         if (!_.isArray(ids) || _.any(ids, function(id) {return !_.isString(id) && !_.isNumber(id);})) {
           ids = _.pluck(pluralize.apply(this, [ids]), this.primaryKey);
+          // eslint-disable-next-line no-console
           console.trace('The first argument passed to `' + self.identity + '.subscribe()` must be an array of ids.  To subscribe to a single record, wrap the id in an array.');
+
           sails.log.warn('For example: `[' + ids[0] + ']`');
           sails.log.warn('Wrapping it in an array for you this time...');
         }
@@ -462,37 +463,37 @@ module.exports = function(sails) {
               // Get the inverse association definition, if any
               reverseAssociation = _.find(ReferencedModel.associations, {collection: this.identity, via: key}) || _.find(ReferencedModel.associations, {model: this.identity, via: key});
 
-                if (!reverseAssociation) {return;}
+              if (!reverseAssociation) {return;}
 
-                // If this is a to-many association, do _publishAdd or _publishRemove as necessary
-                // on the other side
-                if (reverseAssociation.type === 'collection') {
-                  // If there was a previous value, alert the previously associated model
-                  if (previous[key]) {
-                    ReferencedModel._publishRemove(previousPK, reverseAssociation.alias, id, req, {noReverse:true});
-                  }
-                  // If there's a new value (i.e. it's not null), alert the newly associated model
-                  if (val) {
-                    ReferencedModel._publishAdd(newPK, reverseAssociation.alias, id, req, {noReverse:true});
-                  }
+              // If this is a to-many association, do _publishAdd or _publishRemove as necessary
+              // on the other side
+              if (reverseAssociation.type === 'collection') {
+                // If there was a previous value, alert the previously associated model
+                if (previous[key]) {
+                  ReferencedModel._publishRemove(previousPK, reverseAssociation.alias, id, req, {noReverse:true});
                 }
-                // Otherwise do a _publishUpdate
-                else {
-
-                  var pubData = {};
-
-                  // If there was a previous association, notify it that it has been nullified
-                  if (previous[key]) {
-                    pubData[reverseAssociation.alias] = null;
-                    ReferencedModel._publishUpdate(previousPK, pubData, req, {noReverse:true});
-                  }
-                  // If there's a new association, notify it that it has been linked
-                  if (val) {
-                    pubData[reverseAssociation.alias] = id;
-                    ReferencedModel._publishUpdate(newPK, pubData, req, {noReverse:true});
-                  }
-
+                // If there's a new value (i.e. it's not null), alert the newly associated model
+                if (val) {
+                  ReferencedModel._publishAdd(newPK, reverseAssociation.alias, id, req, {noReverse:true});
                 }
+              }
+              // Otherwise do a _publishUpdate
+              else {
+
+                var pubData = {};
+
+                // If there was a previous association, notify it that it has been nullified
+                if (previous[key]) {
+                  pubData[reverseAssociation.alias] = null;
+                  ReferencedModel._publishUpdate(previousPK, pubData, req, {noReverse:true});
+                }
+                // If there's a new association, notify it that it has been linked
+                if (val) {
+                  pubData[reverseAssociation.alias] = id;
+                  ReferencedModel._publishUpdate(newPK, pubData, req, {noReverse:true});
+                }
+
+              }
 
             }
 
@@ -503,58 +504,58 @@ module.exports = function(sails) {
 
               if (!reverseAssociation) {return;}
 
-                // If we can't get the previous PKs (b/c previous isn't populated), bail
-                if (typeof(previous[key]) === 'undefined') {
-                  return;
-                }
+              // If we can't get the previous PKs (b/c previous isn't populated), bail
+              if (typeof(previous[key]) === 'undefined') {
+                return;
+              }
 
-                // Get the previous set of IDs
-                var previousPKs = _.pluck(previous[key], ReferencedModel.primaryKey);
-                // Get the current set of IDs
-                var updatedPKs = _.map(val, function(_val) {
-                  if (_.isObject(_val)) {
-                    return _val[ReferencedModel.primaryKey];
-                  } else {
-                    return _val;
-                  }
+              // Get the previous set of IDs
+              var previousPKs = _.pluck(previous[key], ReferencedModel.primaryKey);
+              // Get the current set of IDs
+              var updatedPKs = _.map(val, function(_val) {
+                if (_.isObject(_val)) {
+                  return _val[ReferencedModel.primaryKey];
+                } else {
+                  return _val;
+                }
+              });
+              // Find any values that were added to the collection
+              var addedPKs = _.difference(updatedPKs, previousPKs);
+              // Find any values that were removed from the collection
+              var removedPKs = _.difference(previousPKs, updatedPKs);
+
+              // If this is a to-many association, do _publishAdd or _publishRemove as necessary
+              // on the other side
+              if (reverseAssociation.type === 'collection') {
+
+                // Alert any removed models
+                _.each(removedPKs, function(pk) {
+                  ReferencedModel._publishRemove(pk, reverseAssociation.alias, id, req, {noReverse:true});
                 });
-                // Find any values that were added to the collection
-                var addedPKs = _.difference(updatedPKs, previousPKs);
-                // Find any values that were removed from the collection
-                var removedPKs = _.difference(previousPKs, updatedPKs);
+                // Alert any added models
+                _.each(addedPKs, function(pk) {
+                  ReferencedModel._publishAdd(pk, reverseAssociation.alias, id, req, {noReverse:true});
+                });
 
-                // If this is a to-many association, do _publishAdd or _publishRemove as necessary
-                // on the other side
-                if (reverseAssociation.type === 'collection') {
+              }
 
-                  // Alert any removed models
-                  _.each(removedPKs, function(pk) {
-                    ReferencedModel._publishRemove(pk, reverseAssociation.alias, id, req, {noReverse:true});
-                  });
-                  // Alert any added models
-                  _.each(addedPKs, function(pk) {
-                    ReferencedModel._publishAdd(pk, reverseAssociation.alias, id, req, {noReverse:true});
-                  });
+              // Otherwise do a _publishUpdate
+              else {
 
-                }
+                // Alert any removed models
+                _.each(removedPKs, function(pk) {
+                  var pubData = {};
+                  pubData[reverseAssociation.alias] = null;
+                  ReferencedModel._publishUpdate(pk, pubData, req, {noReverse:true});
+                });
+                // Alert any added models
+                _.each(addedPKs, function(pk) {
+                  var pubData = {};
+                  pubData[reverseAssociation.alias] = id;
+                  ReferencedModel._publishUpdate(pk, pubData, req, {noReverse:true});
+                });
 
-                // Otherwise do a _publishUpdate
-                else {
-
-                  // Alert any removed models
-                  _.each(removedPKs, function(pk) {
-                    var pubData = {};
-                    pubData[reverseAssociation.alias] = null;
-                    ReferencedModel._publishUpdate(pk, pubData, req, {noReverse:true});
-                  });
-                  // Alert any added models
-                  _.each(addedPKs, function(pk) {
-                    var pubData = {};
-                    pubData[reverseAssociation.alias] = id;
-                    ReferencedModel._publishUpdate(pk, pubData, req, {noReverse:true});
-                  });
-
-                }
+              }
 
             }
           }, this);
@@ -904,7 +905,6 @@ module.exports = function(sails) {
        */
 
       _publishCreateSingle: function(values, req, options) {
-        var self = this;
         var reverseAssociation;
 
         options = options || {};
@@ -956,27 +956,27 @@ module.exports = function(sails) {
             // Get the inverse association definition, if any
             reverseAssociation = _.find(ReferencedModel.associations, {collection: this.identity, via: key}) || _.find(ReferencedModel.associations, {model: this.identity, via: key});
 
-              if (!reverseAssociation) {return;}
+            if (!reverseAssociation) {return;}
 
-              // If this is a to-many association, do _publishAdd on the other side
-              // TODO -- support nested creates.  For now, we can't tell if an object value here represents
-              // a NEW object or an existing one, so we'll ignore it.
-              if (reverseAssociation.type === 'collection' && !_.isObject(val)) {
-                  ReferencedModel._publishAdd(val, reverseAssociation.alias, id, req, {noReverse:true});
+            // If this is a to-many association, do _publishAdd on the other side
+            // TODO -- support nested creates.  For now, we can't tell if an object value here represents
+            // a NEW object or an existing one, so we'll ignore it.
+            if (reverseAssociation.type === 'collection' && !_.isObject(val)) {
+              ReferencedModel._publishAdd(val, reverseAssociation.alias, id, req, {noReverse:true});
+            }
+            // Otherwise do a _publishUpdate
+            // TODO -- support nested creates.  For now, we can't tell if an object value here represents
+            // a NEW object or an existing one, so we'll ignore it.
+            else {
+
+              var pubData = {};
+
+              if (!_.isObject(val)) {
+                pubData[reverseAssociation.alias] = id;
+                ReferencedModel._publishUpdate(val, pubData, req, {noReverse:true});
               }
-              // Otherwise do a _publishUpdate
-              // TODO -- support nested creates.  For now, we can't tell if an object value here represents
-              // a NEW object or an existing one, so we'll ignore it.
-              else {
 
-                var pubData = {};
-
-                if (!_.isObject(val)) {
-                  pubData[reverseAssociation.alias] = id;
-                  ReferencedModel._publishUpdate(val, pubData, req, {noReverse:true});
-                }
-
-              }
+            }
 
           }
 
@@ -985,41 +985,41 @@ module.exports = function(sails) {
             // Get the inverse association definition, if any
             reverseAssociation = _.find(ReferencedModel.associations, {collection: this.identity, via: key}) || _.find(ReferencedModel.associations, {model: this.identity, alias: association.via});
 
-              if (!reverseAssociation) {return;}
+            if (!reverseAssociation) {return;}
 
-              // If this is a to-many association, do publishAdds on the other side
-              if (reverseAssociation.type === 'collection') {
+            // If this is a to-many association, do publishAdds on the other side
+            if (reverseAssociation.type === 'collection') {
 
-                // Alert any added models
-                _.each(val, function(pk) {
-                  // TODO -- support nested creates.  For now, we can't tell if an object value here represents
-                  // a NEW object or an existing one, so we'll ignore it.
-                  if (_.isObject(pk)) {
-                    return;
-                  }
-                  ReferencedModel._publishAdd(pk, reverseAssociation.alias, id, req, {noReverse:true});
-                });
-
-              }
-
-              // Otherwise do a _publishUpdate
-              else {
-
-                // Alert any added models
-                _.each(val, function(pk) {
-                  // TODO -- support nested creates.  For now, we can't tell if an object value here represents
-                  // a NEW object or an existing one, so we'll ignore it.
-                  if (_.isObject(pk)) {
-                    return;
-                  }
-                  var pubData = {};
-                  pubData[reverseAssociation.alias] = id;
-                  ReferencedModel._publishUpdate(pk, pubData, req, {noReverse:true});
-                });
-
-              }
+              // Alert any added models
+              _.each(val, function(pk) {
+                // TODO -- support nested creates.  For now, we can't tell if an object value here represents
+                // a NEW object or an existing one, so we'll ignore it.
+                if (_.isObject(pk)) {
+                  return;
+                }
+                ReferencedModel._publishAdd(pk, reverseAssociation.alias, id, req, {noReverse:true});
+              });
 
             }
+
+            // Otherwise do a _publishUpdate
+            else {
+
+              // Alert any added models
+              _.each(val, function(pk) {
+                // TODO -- support nested creates.  For now, we can't tell if an object value here represents
+                // a NEW object or an existing one, so we'll ignore it.
+                if (_.isObject(pk)) {
+                  return;
+                }
+                var pubData = {};
+                pubData[reverseAssociation.alias] = id;
+                ReferencedModel._publishUpdate(pk, pubData, req, {noReverse:true});
+              });
+
+            }
+
+          }
 
         }, this);
 

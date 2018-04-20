@@ -76,7 +76,7 @@ module.exports = {
     // Create an empty directory for the test app.
     fs.mkdirSync(appDirPath);
     process.chdir(appName);
-    child_process.exec('node ' + pathToLocalSailsCLI + ' new --fast --without=lodash,async', function(err) {
+    child_process.exec('node ' + pathToLocalSailsCLI + ' new --fast --traditional --without=lodash,async', function(err) {
       if (err) {
         return done(err);
       }
@@ -237,12 +237,31 @@ module.exports = {
   },
 
   linkDeps: function(appPath) {
+
+    // Get the given app's package.json (defaulting to an empty dictionary).
+    var packageJson;
+    try {
+      packageJson = require(path.resolve(appPath, 'package.json'));
+    } catch (e) {
+      packageJson = {};
+    }
+
     var deps = ['sails-hook-orm-offshore', 'sails-hook-sockets', 'offshore-memory', 'sails-hook-blueprints-offshore'];
+
     _.each(deps, function(dep) {
+      // Create a symlink
       fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..', 'node_modules', dep), path.resolve(appPath, 'node_modules', dep));
+      // Add a entry into the package.json dependencies
+      packageJson.dependencies = packageJson.dependencies || {};
+      packageJson.dependencies[dep] = '0.0.0';
     });
+
     // add this hook
     fs.ensureSymlinkSync(path.resolve(__dirname, '..', '..'), path.resolve(appPath, 'node_modules', 'sails-hook-pubsub-offshore'));
+    packageJson.dependencies['sails-hook-pubsub-offshore'] = '0.0.0';
+
+    // Output the update package.json
+    fs.writeFileSync(path.resolve(appPath, 'package.json'), JSON.stringify(packageJson));
   },
 
   linkLodash: function(appPath) {
